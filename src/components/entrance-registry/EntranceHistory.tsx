@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 
 interface EntryRecord {
   id: number;
@@ -30,6 +31,8 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
   const [apartmentFilter, setApartmentFilter] = useState("all");
   // Estado para armazenar a data selecionada
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  // Estado para controlar o popover do apartamento
+  const [openApartmentPopover, setOpenApartmentPopover] = useState(false);
 
   // Obter lista única de apartamentos para o filtro
   const uniqueApartments = Array.from(new Set(entries.map(entry => entry.apartment))).sort();
@@ -83,24 +86,52 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
 
           {/* Linha de filtros adicionais */}
           <div className="flex flex-col sm:flex-row gap-2">
-            {/* Filtro de apartamento */}
+            {/* Filtro de apartamento com pesquisa */}
             <div className="flex-1">
-              <Select value={apartmentFilter} onValueChange={setApartmentFilter}>
-                <SelectTrigger className="w-full">
-                  <div className="flex items-center gap-2">
-                    <Home className="h-4 w-4" />
-                    <SelectValue placeholder="Filtrar por apartamento" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os apartamentos</SelectItem>
-                  {uniqueApartments.map(apt => (
-                    <SelectItem key={apt} value={apt}>
-                      Apartamento {apt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={openApartmentPopover} onOpenChange={setOpenApartmentPopover}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openApartmentPopover}
+                    className="w-full justify-start"
+                  >
+                    <Home className="mr-2 h-4 w-4" />
+                    {apartmentFilter === "all" 
+                      ? "Todos os apartamentos" 
+                      : `Apartamento ${apartmentFilter}`}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar apartamento..." />
+                    <CommandEmpty>Nenhum apartamento encontrado.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="all"
+                        onSelect={() => {
+                          setApartmentFilter("all");
+                          setOpenApartmentPopover(false);
+                        }}
+                      >
+                        Todos os apartamentos
+                      </CommandItem>
+                      {uniqueApartments.map((apt) => (
+                        <CommandItem
+                          key={apt}
+                          value={apt}
+                          onSelect={() => {
+                            setApartmentFilter(apt);
+                            setOpenApartmentPopover(false);
+                          }}
+                        >
+                          Apartamento {apt}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Filtro de data */}
