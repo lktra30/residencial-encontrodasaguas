@@ -4,7 +4,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, Calendar, Home } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -44,7 +43,7 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
       entry.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
       entry.document.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Filtro por apartamento (agora usando 'all' em vez de string vazia)
+    // Filtro por apartamento
     const matchesApartment = apartmentFilter === "all" || entry.apartment === apartmentFilter;
     
     // Filtro por data
