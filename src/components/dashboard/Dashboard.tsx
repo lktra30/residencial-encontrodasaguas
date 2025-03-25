@@ -9,8 +9,17 @@ import { Badge } from "@/components/ui/badge";
 import { AccessStatCard } from "./AccessStatCard";
 import { RecentAccessList } from "./RecentAccessList";
 
-// Mock data
-const recentAccessData = [
+// Define the AccessEvent type to match the one in RecentAccessList
+interface AccessEvent {
+  id: number;
+  name: string;
+  accessTime: string;
+  status: "granted" | "denied";
+  cardId: string;
+}
+
+// Mock data with the correct type for status
+const recentAccessData: AccessEvent[] = [
   { id: 1, name: "John Smith", accessTime: "Just now", status: "granted", cardId: "A12345" },
   { id: 2, name: "Maria Garcia", accessTime: "5 minutes ago", status: "granted", cardId: "B67890" },
   { id: 3, name: "Unknown", accessTime: "20 minutes ago", status: "denied", cardId: "Unknown" },
@@ -21,7 +30,7 @@ const recentAccessData = [
 const Dashboard = () => {
   const [doorStatus, setDoorStatus] = useState("locked");
   const [occupancy, setOccupancy] = useState(37);
-  const [recentAccess, setRecentAccess] = useState(recentAccessData);
+  const [recentAccess, setRecentAccess] = useState<AccessEvent[]>(recentAccessData);
   const [systemStatus, setSystemStatus] = useState("online");
   const [accessStats, setAccessStats] = useState({
     today: 42,
