@@ -41,20 +41,32 @@ export function Combobox({
   const [open, setOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
 
-  // Make sure we have a valid options array, even if empty
-  const safeOptions = Array.isArray(options) ? options : []
+  // Ensure options is always an array
+  const safeOptions = React.useMemo(() => {
+    return Array.isArray(options) ? options : []
+  }, [options])
   
   // Find the selected option for display
-  const selectedOption = safeOptions.find((option) => option.value === value)
+  const selectedOption = React.useMemo(() => {
+    return safeOptions.find((option) => option.value === value)
+  }, [safeOptions, value])
 
   // Filter options based on search query
   const filteredOptions = React.useMemo(() => {
     if (!filter || !searchQuery) return safeOptions
+    
     return safeOptions.filter(option => 
       option.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
       option.value.toLowerCase().includes(searchQuery.toLowerCase())
     )
   }, [safeOptions, searchQuery, filter])
+
+  // Reset search query when popover closes
+  React.useEffect(() => {
+    if (!open) {
+      setSearchQuery("")
+    }
+  }, [open])
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -80,25 +92,27 @@ export function Combobox({
           />
           <CommandEmpty>{emptyMessage}</CommandEmpty>
           <CommandGroup className="max-h-60 overflow-auto">
-            {filteredOptions.map((option) => (
-              <CommandItem
-                key={option.value}
-                value={option.value}
-                onSelect={() => {
-                  onChange(option.value)
-                  setOpen(false)
-                  setSearchQuery("")
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === option.value ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                {option.label}
-              </CommandItem>
-            ))}
+            {filteredOptions && filteredOptions.length > 0 ? (
+              filteredOptions.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.value}
+                  onSelect={() => {
+                    onChange(option.value)
+                    setOpen(false)
+                    setSearchQuery("")
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === option.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {option.label}
+                </CommandItem>
+              ))
+            ) : null}
           </CommandGroup>
         </Command>
       </PopoverContent>
