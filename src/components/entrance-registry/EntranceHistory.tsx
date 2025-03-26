@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Calendar, Home } from "lucide-react";
+import { Search, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -54,11 +54,12 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
     const matchesApartment = apartmentFilter === "all" || entry.apartment === apartmentFilter;
     
     // Filtro por data
-    const entryDate = new Date(entry.entryTime.split(" - ")[0].split("/").reverse().join("-"));
     const matchesDate = !selectedDate || (
-      entryDate.getDate() === selectedDate.getDate() &&
-      entryDate.getMonth() === selectedDate.getMonth() &&
-      entryDate.getFullYear() === selectedDate.getFullYear()
+      selectedDate && entry.entryTime && (
+        new Date(entry.entryTime.split(" - ")[0].split("/").reverse().join("-")).getDate() === selectedDate.getDate() &&
+        new Date(entry.entryTime.split(" - ")[0].split("/").reverse().join("-")).getMonth() === selectedDate.getMonth() &&
+        new Date(entry.entryTime.split(" - ")[0].split("/").reverse().join("-")).getFullYear() === selectedDate.getFullYear()
+      )
     );
     
     return matchesSearch && matchesApartment && matchesDate;
@@ -125,7 +126,6 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
                     selected={selectedDate}
                     onSelect={setSelectedDate}
                     initialFocus
-                    className="p-3 pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
