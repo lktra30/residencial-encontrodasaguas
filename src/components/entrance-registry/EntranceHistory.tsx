@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, Calendar, Home } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -32,18 +33,9 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   // Estado para controlar o popover do apartamento
   const [openApartmentPopover, setOpenApartmentPopover] = useState(false);
-  // Estado para armazenar o termo de busca do apartamento
-  const [apartmentSearchTerm, setApartmentSearchTerm] = useState("");
 
   // Obter lista única de apartamentos para o filtro
   const uniqueApartments = Array.from(new Set(entries.map(entry => entry.apartment))).sort();
-
-  // Filtrar os apartamentos com base no termo de busca
-  const filteredApartments = apartmentSearchTerm 
-    ? uniqueApartments.filter(apt => 
-        apt.toLowerCase().includes(apartmentSearchTerm.toLowerCase())
-      )
-    : uniqueApartments;
 
   // Função para filtrar as entradas com base nos critérios de busca
   const filteredEntries = entries.filter(entry => {
@@ -52,7 +44,7 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
       entry.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
       entry.document.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Filtro por apartamento
+    // Filtro por apartamento (agora usando 'all' em vez de string vazia)
     const matchesApartment = apartmentFilter === "all" || entry.apartment === apartmentFilter;
     
     // Filtro por data
@@ -70,14 +62,7 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
   const clearFilters = () => {
     setSearchTerm("");
     setApartmentFilter("all");
-    setApartmentSearchTerm("");
     setSelectedDate(undefined);
-  };
-
-  // Função para selecionar um apartamento
-  const selectApartment = (value: string) => {
-    setApartmentFilter(value);
-    setOpenApartmentPopover(false);
   };
 
   return (
@@ -119,24 +104,26 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
                 </PopoverTrigger>
                 <PopoverContent className="w-[200px] p-0">
                   <Command>
-                    <CommandInput 
-                      placeholder="Buscar apartamento..." 
-                      value={apartmentSearchTerm}
-                      onValueChange={setApartmentSearchTerm}
-                    />
+                    <CommandInput placeholder="Buscar apartamento..." />
                     <CommandEmpty>Nenhum apartamento encontrado.</CommandEmpty>
                     <CommandGroup>
                       <CommandItem
                         value="all"
-                        onSelect={() => selectApartment("all")}
+                        onSelect={() => {
+                          setApartmentFilter("all");
+                          setOpenApartmentPopover(false);
+                        }}
                       >
                         Todos os apartamentos
                       </CommandItem>
-                      {filteredApartments.map((apt) => (
+                      {uniqueApartments.map((apt) => (
                         <CommandItem
                           key={apt}
                           value={apt}
-                          onSelect={() => selectApartment(apt)}
+                          onSelect={() => {
+                            setApartmentFilter(apt);
+                            setOpenApartmentPopover(false);
+                          }}
                         >
                           Apartamento {apt}
                         </CommandItem>
