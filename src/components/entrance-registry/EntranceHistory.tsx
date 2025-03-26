@@ -27,7 +27,7 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
   // Estado para armazenar o termo de busca
   const [searchTerm, setSearchTerm] = useState("");
   // Estado para armazenar o filtro de apartamento
-  const [apartmentFilter, setApartmentFilter] = useState("");
+  const [apartmentFilter, setApartmentFilter] = useState("all");
   // Estado para armazenar a data selecionada
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
@@ -41,8 +41,8 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
       entry.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
       entry.document.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Filtro por apartamento
-    const matchesApartment = !apartmentFilter || entry.apartment === apartmentFilter;
+    // Filtro por apartamento (agora usando 'all' em vez de string vazia)
+    const matchesApartment = apartmentFilter === "all" || entry.apartment === apartmentFilter;
     
     // Filtro por data
     const entryDate = new Date(entry.entryTime.split(" - ")[0].split("/").reverse().join("-"));
@@ -58,7 +58,7 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
   // Função para limpar os filtros
   const clearFilters = () => {
     setSearchTerm("");
-    setApartmentFilter("");
+    setApartmentFilter("all");
     setSelectedDate(undefined);
   };
 
@@ -93,7 +93,7 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os apartamentos</SelectItem>
+                  <SelectItem value="all">Todos os apartamentos</SelectItem>
                   {uniqueApartments.map(apt => (
                     <SelectItem key={apt} value={apt}>
                       Apartamento {apt}
@@ -135,7 +135,7 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
               variant="outline" 
               className="shrink-0" 
               onClick={clearFilters}
-              disabled={!searchTerm && !apartmentFilter && !selectedDate}
+              disabled={searchTerm === "" && apartmentFilter === "all" && !selectedDate}
             >
               Limpar filtros
             </Button>
