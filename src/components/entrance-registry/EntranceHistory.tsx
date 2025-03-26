@@ -32,9 +32,18 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   // Estado para controlar o popover do apartamento
   const [openApartmentPopover, setOpenApartmentPopover] = useState(false);
+  // Estado para armazenar o termo de busca do apartamento
+  const [apartmentSearchTerm, setApartmentSearchTerm] = useState("");
 
   // Obter lista única de apartamentos para o filtro
   const uniqueApartments = Array.from(new Set(entries.map(entry => entry.apartment))).sort();
+
+  // Filtrar os apartamentos com base no termo de busca
+  const filteredApartments = apartmentSearchTerm 
+    ? uniqueApartments.filter(apt => 
+        apt.toLowerCase().includes(apartmentSearchTerm.toLowerCase())
+      )
+    : uniqueApartments;
 
   // Função para filtrar as entradas com base nos critérios de busca
   const filteredEntries = entries.filter(entry => {
@@ -61,7 +70,14 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
   const clearFilters = () => {
     setSearchTerm("");
     setApartmentFilter("all");
+    setApartmentSearchTerm("");
     setSelectedDate(undefined);
+  };
+
+  // Função para selecionar um apartamento
+  const selectApartment = (value: string) => {
+    setApartmentFilter(value);
+    setOpenApartmentPopover(false);
   };
 
   return (
@@ -103,26 +119,24 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
                 </PopoverTrigger>
                 <PopoverContent className="w-[200px] p-0">
                   <Command>
-                    <CommandInput placeholder="Buscar apartamento..." />
+                    <CommandInput 
+                      placeholder="Buscar apartamento..." 
+                      value={apartmentSearchTerm}
+                      onValueChange={setApartmentSearchTerm}
+                    />
                     <CommandEmpty>Nenhum apartamento encontrado.</CommandEmpty>
                     <CommandGroup>
                       <CommandItem
                         value="all"
-                        onSelect={() => {
-                          setApartmentFilter("all");
-                          setOpenApartmentPopover(false);
-                        }}
+                        onSelect={() => selectApartment("all")}
                       >
                         Todos os apartamentos
                       </CommandItem>
-                      {uniqueApartments.map((apt) => (
+                      {filteredApartments.map((apt) => (
                         <CommandItem
                           key={apt}
                           value={apt}
-                          onSelect={() => {
-                            setApartmentFilter(apt);
-                            setOpenApartmentPopover(false);
-                          }}
+                          onSelect={() => selectApartment(apt)}
                         >
                           Apartamento {apt}
                         </CommandItem>
