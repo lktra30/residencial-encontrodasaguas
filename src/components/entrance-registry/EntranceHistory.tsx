@@ -4,12 +4,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, Calendar, Home } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Combobox } from "@/components/ui/combobox";
 
 interface EntryRecord {
   id: number;
@@ -33,6 +33,15 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
 
   // Obter lista única de apartamentos para o filtro
   const uniqueApartments = Array.from(new Set(entries.map(entry => entry.apartment))).sort();
+  
+  // Formatar opções de apartamento para o combobox
+  const apartmentOptions = [
+    { value: "all", label: "Todos os apartamentos" },
+    ...uniqueApartments.map(apt => ({
+      value: apt,
+      label: `Apartamento ${apt}`
+    }))
+  ];
 
   // Função para filtrar as entradas com base nos critérios de busca
   const filteredEntries = entries.filter(entry => {
@@ -41,7 +50,7 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
       entry.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
       entry.document.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Filtro por apartamento (agora usando 'all' em vez de string vazia)
+    // Filtro por apartamento
     const matchesApartment = apartmentFilter === "all" || entry.apartment === apartmentFilter;
     
     // Filtro por data
@@ -83,24 +92,16 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
 
           {/* Linha de filtros adicionais */}
           <div className="flex flex-col sm:flex-row gap-2">
-            {/* Filtro de apartamento */}
+            {/* Filtro de apartamento com combobox pesquisável */}
             <div className="flex-1">
-              <Select value={apartmentFilter} onValueChange={setApartmentFilter}>
-                <SelectTrigger className="w-full">
-                  <div className="flex items-center gap-2">
-                    <Home className="h-4 w-4" />
-                    <SelectValue placeholder="Filtrar por apartamento" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os apartamentos</SelectItem>
-                  {uniqueApartments.map(apt => (
-                    <SelectItem key={apt} value={apt}>
-                      Apartamento {apt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={apartmentOptions}
+                value={apartmentFilter}
+                onChange={setApartmentFilter}
+                placeholder="Filtrar por apartamento"
+                emptyMessage="Nenhum apartamento encontrado"
+                className="w-full"
+              />
             </div>
 
             {/* Filtro de data */}
