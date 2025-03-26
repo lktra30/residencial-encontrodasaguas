@@ -1,15 +1,22 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Calendar } from "lucide-react";
+import { Search, Calendar, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Combobox } from "@/components/ui/combobox";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface EntryRecord {
   id: number;
@@ -26,32 +33,41 @@ interface EntranceHistoryProps {
 export function EntranceHistory({ entries }: EntranceHistoryProps) {
   // Estado para armazenar o termo de busca
   const [searchTerm, setSearchTerm] = useState("");
-  // Estado para armazenar o filtro de apartamento
+  // Estado para armazenar o filtro de apartamento (seleção)
   const [apartmentFilter, setApartmentFilter] = useState("all");
+  // Estado para armazenar o filtro de apartamento (input manual)
+  const [apartmentInputFilter, setApartmentInputFilter] = useState("");
   // Estado para armazenar a data selecionada
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
   // Obter lista única de apartamentos para o filtro
-  const uniqueApartments = Array.from(new Set(entries.map(entry => entry.apartment))).sort();
+  const uniqueApartments = useMemo(() => 
+    Array.from(new Set(entries.map(entry => entry.apartment))).sort(), 
+    [entries]
+  );
   
   // Formatar opções de apartamento para o combobox
-  const apartmentOptions = [
+  const apartmentOptions = useMemo(() => [
     { value: "all", label: "Todos os apartamentos" },
     ...uniqueApartments.map(apt => ({
       value: apt,
       label: `Apartamento ${apt}`
     }))
-  ];
+  ], [uniqueApartments]);
 
   // Função para filtrar as entradas com base nos critérios de busca
-  const filteredEntries = entries.filter(entry => {
+  const filteredEntries = useMemo(() => entries.filter(entry => {
     // Filtro por termo de busca (nome ou documento)
     const matchesSearch = 
       entry.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
       entry.document.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Filtro por apartamento
-    const matchesApartment = apartmentFilter === "all" || entry.apartment === apartmentFilter;
+    // Filtro por seleção de apartamento do dropdown
+    const matchesApartmentDropdown = apartmentFilter === "all" || entry.apartment === apartmentFilter;
+    
+    // Filtro por input manual de apartamento
+    const matchesApartmentInput = !apartmentInputFilter || 
+      entry.apartment.toLowerCase().includes(apartmentInputFilter.toLowerCase());
     
     // Filtro por data
     const matchesDate = !selectedDate || (
@@ -62,13 +78,14 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
       )
     );
     
-    return matchesSearch && matchesApartment && matchesDate;
-  });
+    return matchesSearch && matchesApartmentDropdown && matchesApartmentInput && matchesDate;
+  }), [entries, searchTerm, apartmentFilter, apartmentInputFilter, selectedDate]);
 
   // Função para limpar os filtros
   const clearFilters = () => {
     setSearchTerm("");
     setApartmentFilter("all");
+    setApartmentInputFilter("");
     setSelectedDate(undefined);
   };
 
@@ -93,15 +110,35 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
 
           {/* Linha de filtros adicionais */}
           <div className="flex flex-col sm:flex-row gap-2">
-            {/* Filtro de apartamento com combobox pesquisável */}
+            {/* Filtro de apartamento com dropdown */}
             <div className="flex-1">
-              <Combobox
-                options={apartmentOptions}
-                value={apartmentFilter}
-                onChange={setApartmentFilter}
-                placeholder="Filtrar por apartamento"
-                emptyMessage="Nenhum apartamento encontrado"
-                className="w-full"
+              <Select 
+                value={apartmentFilter} 
+                onValueChange={setApartmentFilter}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Filtrar por apartamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os apartamentos</SelectItem>
+                  {uniqueApartments.map((apt) => (
+                    <SelectItem key={apt} value={apt}>
+                      Apartamento {apt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Input de busca específico para apartamento */}
+            <div className="flex-1 relative">
+              <Filter className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Filtrar por número do apartamento..."
+                className="pl-8"
+                value={apartmentInputFilter}
+                onChange={(e) => setApartmentInputFilter(e.target.value)}
               />
             </div>
 
@@ -136,7 +173,7 @@ export function EntranceHistory({ entries }: EntranceHistoryProps) {
               variant="outline" 
               className="shrink-0" 
               onClick={clearFilters}
-              disabled={searchTerm === "" && apartmentFilter === "all" && !selectedDate}
+              disabled={searchTerm === "" && apartmentFilter === "all" && !apartmentInputFilter && !selectedDate}
             >
               Limpar filtros
             </Button>
