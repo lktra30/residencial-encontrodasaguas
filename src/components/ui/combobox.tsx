@@ -91,7 +91,7 @@ export function Combobox({
             onValueChange={setSearchQuery}
           />
           <CommandEmpty>{emptyMessage}</CommandEmpty>
-          <CommandGroup className="max-h-60 overflow-auto">
+          <CommandGroup className="max-h-80 overflow-auto">
             {filteredOptions && filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
                 <CommandItem

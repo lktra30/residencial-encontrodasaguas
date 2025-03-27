@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { MainHeader } from "@/components/layout/MainHeader";
 import { Toaster } from "@/components/ui/toaster";
@@ -13,14 +12,16 @@ const Index = () => {
           <CardHeader className="pb-4">
             <CardTitle className="text-2xl font-bold">Controle de Acesso ao Prédio</CardTitle>
             <CardDescription>
-              Sistema de registro de entrada de visitantes e moradores
+              Sistema de registro de entrada de visitantes
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-4">
             <BuildingRegistry />
           </CardContent>
-          <CardFooter className="border-t pt-4 text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Sistema de Controle de Acesso
+          <CardFooter className="border-t pt-4">
+            <span className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()} Sistema de Controle de Acesso
+            </span>
           </CardFooter>
         </Card>
       </main>

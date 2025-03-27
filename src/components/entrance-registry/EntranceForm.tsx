@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { PhotoCapture } from "./PhotoCapture";
 
 interface FormValues {
   name: string;
@@ -21,10 +21,14 @@ interface EntranceFormProps {
     document: string;
     apartment: string;
     entryTime: string;
+    photo?: string;
   }) => void;
 }
 
 export function EntranceForm({ onNewEntry }: EntranceFormProps) {
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [resetCamera, setResetCamera] = useState(false);
+  
   const form = useForm<FormValues>({
     defaultValues: {
       name: "",
@@ -41,13 +45,18 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
       document: data.document,
       apartment: data.apartment,
       entryTime: new Date().toLocaleString(),
+      photo: photo || undefined,
     };
 
     // Call the callback to add to history
     onNewEntry(newEntry);
 
-    // Reset form
+    // Reset form and photo
     form.reset();
+    setPhoto(null);
+    
+    // Alternar o valor de resetCamera para disparar o efeito
+    setResetCamera(!resetCamera);
 
     // Show success toast
     toast({
@@ -100,14 +109,24 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
                 <FormItem>
                   <FormLabel>Apartamento</FormLabel>
                   <FormControl>
-                    <Input placeholder="Número do apartamento" {...field} />
+                    <Input placeholder="Digite o número do apartamento" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
-            <Button type="submit" className="w-full">Registrar Entrada</Button>
+
+            <div className="space-y-2">
+              <Label>Foto</Label>
+              <PhotoCapture 
+                onPhotoCapture={setPhoto} 
+                resetTrigger={resetCamera}
+              />
+            </div>
+
+            <Button type="submit" className="w-full">
+              Registrar Entrada
+            </Button>
           </form>
         </Form>
       </CardContent>
