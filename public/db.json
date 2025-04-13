@@ -1,0 +1,72 @@
+{
+  "visitors": [
+    { 
+      "id": 1, 
+      "name": "João Silva", 
+      "cpf": "123.456.789-00", 
+      "photo_path": null, 
+      "registry_time": "2023-06-10T14:30:00.000Z",
+      "visitCount": 4,
+      "lastEntrance": "2023-07-01T10:15:00.000Z",
+      "visitingApartment": "101"
+    },
+    { 
+      "id": 2, 
+      "name": "Maria Santos", 
+      "cpf": "987.654.321-00", 
+      "photo_path": null, 
+      "registry_time": "2023-06-12T09:45:00.000Z",
+      "visitCount": 2,
+      "lastEntrance": "2023-06-30T16:20:00.000Z",
+      "visitingApartment": "202"
+    },
+    { 
+      "id": 3, 
+      "name": "Carlos Oliveira", 
+      "cpf": "456.789.123-00", 
+      "photo_path": null, 
+      "registry_time": "2023-06-15T11:20:00.000Z",
+      "visitCount": 1,
+      "lastEntrance": "2023-06-25T14:55:00.000Z",
+      "visitingApartment": "303"
+    }
+  ],
+  "access_logs": [
+    {
+      "id": 1,
+      "visitor_id": 1,
+      "apartment": "101",
+      "auth_by": "Portaria",
+      "entry_time": "2023-07-01T10:15:00.000Z",
+      "photo_path": null,
+      "created_at": "2023-07-01T10:15:00.000Z"
+    },
+    {
+      "id": 2,
+      "visitor_id": 2,
+      "apartment": "202",
+      "auth_by": "Ricardo Morais",
+      "entry_time": "2023-06-30T16:20:00.000Z",
+      "photo_path": null,
+      "created_at": "2023-06-30T16:20:00.000Z"
+    },
+    {
+      "id": 3,
+      "visitor_id": 3,
+      "apartment": "303",
+      "auth_by": "App",
+      "entry_time": "2023-06-25T14:55:00.000Z",
+      "photo_path": null,
+      "created_at": "2023-06-25T14:55:00.000Z"
+    },
+    {
+      "id": 4,
+      "visitor_id": 1,
+      "apartment": "101",
+      "auth_by": "Portaria",
+      "entry_time": "2023-06-20T09:30:00.000Z",
+      "photo_path": null,
+      "created_at": "2023-06-20T09:30:00.000Z"
+    }
+  ]
+} 

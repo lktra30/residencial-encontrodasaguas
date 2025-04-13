@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Visitor {
+  id String @id @default(uuid())
+  name String
+  cpf String @unique
+  photo String @unique
+  createdAt DateTime @default(now())
+  accessLogs AccessLog[]
+  photoRelations AccessLog[] @relation("PhotoRelation")
+}
+
+model AccessLog {
+  id String @id @default(uuid())
+  visitorId String
+  visitor Visitor @relation(fields: [visitorId], references: [id])
+  authBy String
+  going_to_ap String
+  photoPath String
+  photoRef Visitor @relation("PhotoRelation", fields: [photoPath], references: [photo])
+  lastAccess DateTime @default(now())
+  createdAt DateTime @default(now())
+}
+
