@@ -297,11 +297,11 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
               name="cpf"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>CPF <span className="text-red-500">*</span></FormLabel>
+                  <FormLabel>CPF ou RG<span className="text-red-500">*</span></FormLabel>
                   <div className="flex gap-2">
                     <FormControl>
                       <Input 
-                        placeholder="Digite o CPF" 
+                        placeholder="Digite o CPF ou RG" 
                         {...field} 
                         onBlur={handleCpfBlur}
                         required
