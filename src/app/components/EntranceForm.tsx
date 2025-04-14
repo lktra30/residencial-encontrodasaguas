@@ -1,6 +1,6 @@
 import React, { FormEvent } from 'react';
 import { useRouter } from 'next/router';
-import { toast } from 'react-hot-toast';
+import { toast } from "sonner";
 import { getVisitorByCPF, updateVisitor, createVisitor, createAccessLog } from '../services/api';
 import { AccessLog, Visitor } from '../types';
 
