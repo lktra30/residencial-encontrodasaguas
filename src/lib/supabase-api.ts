@@ -189,7 +189,7 @@ export async function getAccessLogs(limit = 20) {
     
     // Adicionar informações do visitante aos logs - retornar todos os registros sem limite
     const logsWithVisitors = data.access_logs.map(log => {
-      const visitor = data.visitors.find(v => v.id === log.visitor_id || v.id === log.visitorId);
+      const visitor = data.visitors.find(v => v.id === log.visitorId);
       return {
         ...log,
         visitors: visitor
@@ -262,7 +262,7 @@ export async function getAccessLogs(limit = 20) {
     // Em caso de erro, usar dados mockados como fallback
     const data = await loadMockData();
     const logsWithVisitors = data?.access_logs.map(log => {
-      const visitor = data.visitors.find(v => v.id === log.visitor_id || v.id === log.visitorId);
+      const visitor = data.visitors.find(v => v.id === log.visitorId);
       return {
         ...log,
         visitors: visitor

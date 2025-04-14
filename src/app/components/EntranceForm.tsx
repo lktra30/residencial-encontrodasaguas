@@ -37,11 +37,11 @@ const EntranceForm: React.FC = () => {
       if (existingVisitors && existingVisitors.length > 0) {
         // Visitante existe, usar ID existente
         visitorData = existingVisitors[0];
-        visitorId = visitorData.id;
+        visitorId = visitorData?.id || '';
         console.log("Visitante existente encontrado:", visitorId);
         
         // Atualizar foto se necessário
-        if (photo && photo !== visitorData.photo) {
+        if (visitorData && photo && photo !== visitorData.photo) {
           console.log("Atualizando foto do visitante existente");
           const { error: updateError } = await updateVisitor(visitorId, { photo });
           if (updateError) {
@@ -68,11 +68,11 @@ const EntranceForm: React.FC = () => {
         
         if (createError || !newVisitor || newVisitor.length === 0) {
           console.error("Erro na criação do visitante:", createError);
-          throw new Error(createError?.message || "Falha ao criar visitante");
+          throw new Error("Falha ao criar visitante");
         }
         
         visitorData = newVisitor[0];
-        visitorId = visitorData.id;
+        visitorId = visitorData?.id || '';
         console.log("Novo visitante criado com ID:", visitorId);
         
         if (!visitorId) {
@@ -85,6 +85,7 @@ const EntranceForm: React.FC = () => {
       const accessLog: AccessLog = {
         visitorId,
         going_to_ap: apartmentNumber,
+        authBy: "Porteiro",
         entrance_reason: reason,
         lastAccess: new Date().toISOString(),
       } as AccessLog;
@@ -93,16 +94,16 @@ const EntranceForm: React.FC = () => {
       
       if (accessLogError) {
         console.error("Erro ao registrar acesso:", accessLogError);
-        throw new Error(accessLogError.message || "Falha ao registrar acesso");
+        throw new Error("Falha ao registrar acesso");
       }
       
       console.log("Acesso registrado com sucesso");
       toast.success("Entrada registrada com sucesso!");
       resetForm();
       router.push('/');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro durante o processo de registro:", error);
-      toast.error(`Erro: ${error.message || "Falha ao processar o registro"}`);
+      toast.error(`Erro: ${error?.message || "Falha ao processar o registro"}`);
     } finally {
       setIsSubmitting(false);
     }
