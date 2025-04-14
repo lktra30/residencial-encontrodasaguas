@@ -337,10 +337,10 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
               name="apartment"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Apartamento <span className="text-red-500">*</span></FormLabel>
+                  <FormLabel>Bloco e Apartamento <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="Número do apartamento" 
+                      placeholder="Bloco e Número do apartamento" 
                       {...field}
                       required
                     />
