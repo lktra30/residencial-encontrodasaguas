@@ -1,11 +1,24 @@
-import React, { FormEvent } from 'react';
+import React, { FormEvent, useState } from 'react';
 import { useRouter } from 'next/router';
 import { toast } from "sonner";
-import { getVisitorByCPF, updateVisitor, createVisitor, createAccessLog } from '../services/api';
-import { AccessLog, Visitor } from '../types';
+import { getVisitorByCpf, updateVisitor, createVisitor, createAccessLog, Visitor, AccessLog } from "../../lib/supabase-api";
 
 const EntranceForm: React.FC = () => {
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [name, setName] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [photo, setPhoto] = useState('');
+  const [apartmentNumber, setApartmentNumber] = useState('');
+  const [reason, setReason] = useState('');
+
+  const resetForm = () => {
+    setName('');
+    setCpf('');
+    setPhoto('');
+    setApartmentNumber('');
+    setReason('');
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -15,7 +28,7 @@ const EntranceForm: React.FC = () => {
       console.log("Iniciando processo de registro de entrada...");
       
       // Verificar se já existe um visitante com este CPF
-      const { data: existingVisitors } = await getVisitorByCPF(cpf);
+      const { data: existingVisitors } = await getVisitorByCpf(cpf);
       console.log("Resultado da busca por CPF:", existingVisitors);
       
       let visitorId: string;
@@ -96,8 +109,76 @@ const EntranceForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      {/* Form fields go here */}
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-4">
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium">Nome</label>
+          <input
+            type="text"
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+            required
+          />
+        </div>
+        
+        <div>
+          <label htmlFor="cpf" className="block text-sm font-medium">CPF</label>
+          <input
+            type="text"
+            id="cpf"
+            value={cpf}
+            onChange={(e) => setCpf(e.target.value)}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+            required
+          />
+        </div>
+        
+        <div>
+          <label htmlFor="apartment" className="block text-sm font-medium">Apartamento</label>
+          <input
+            type="text"
+            id="apartment"
+            value={apartmentNumber}
+            onChange={(e) => setApartmentNumber(e.target.value)}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+            required
+          />
+        </div>
+        
+        <div>
+          <label htmlFor="reason" className="block text-sm font-medium">Motivo</label>
+          <input
+            type="text"
+            id="reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+          />
+        </div>
+        
+        <div>
+          <label htmlFor="photo" className="block text-sm font-medium">URL da Foto</label>
+          <input
+            type="text"
+            id="photo"
+            value={photo}
+            onChange={(e) => setPhoto(e.target.value)}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+          />
+        </div>
+      </div>
+      
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Registrando..." : "Registrar Entrada"}
+        </button>
+      </div>
     </form>
   );
 };
