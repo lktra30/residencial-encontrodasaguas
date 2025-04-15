@@ -211,7 +211,7 @@ export default function ManageBansPage() {
         
         const { error } = await updateVisitor(selectedVisitor.id, {
           isBanned: false,
-          banReason: null
+          banReason: undefined
         });
         
         if (error) throw error;
@@ -220,7 +220,7 @@ export default function ManageBansPage() {
         setVisitors(prevVisitors => 
           prevVisitors.map(v => 
             v.id === selectedVisitor.id 
-              ? { ...v, isBanned: false, banReason: null } 
+              ? { ...v, isBanned: false, banReason: undefined } 
               : v
           )
         );

@@ -20,6 +20,7 @@ const formSchema = z.object({
   cpf: z.string().min(11, { message: "CPF deve ter 11 dígitos" }),
   apartment: z.string().min(1, { message: "Apartamento é obrigatório" }),
   authorizedBy: z.string().min(1, { message: "Nome do morador é obrigatório" }),
+  colaborador: z.string().optional(),
 });
 
 // Definindo os tipos para o formulário
@@ -34,6 +35,7 @@ interface EntryRecord {
   entryTime: string;
   photo?: string;
   authorizedBy?: string;
+  colaborador?: string;
 }
 
 interface EntranceFormProps {
@@ -58,6 +60,7 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
       cpf: "",
       apartment: "",
       authorizedBy: "",
+      colaborador: "",
     },
   });
 
@@ -252,7 +255,8 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
         visitorId: visitorId,
         going_to_ap: data.apartment,
         authBy: data.authorizedBy || "Portaria",
-        lastAccess: new Date().toISOString()
+        lastAccess: new Date().toISOString(),
+        colaborador: data.colaborador || null
       };
       console.log("[DEBUG] Dados do log de acesso:", accessLogData);
       
@@ -275,6 +279,7 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
           entryTime: new Date().toLocaleString(),
           photo: photoUrl || undefined,
           authorizedBy: data.authorizedBy,
+          colaborador: data.colaborador
         };
 
         // Chamar callback para adicionar ao histórico
@@ -296,7 +301,7 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
       // Mostrar mensagem de sucesso
       toast({
         title: "Entrada registrada com sucesso",
-        description: `${data.name} registrado para o apartamento ${data.apartment}${data.authorizedBy ? `, autorizado por ${data.authorizedBy}` : ''}`,
+        description: `${data.name} registrado para o apartamento ${data.apartment}${data.authorizedBy ? `, autorizado por ${data.authorizedBy}` : ''}${data.colaborador ? `, colaborador: ${data.colaborador}` : ''}`,
       });
     } catch (err) {
       console.error('[DEBUG] Erro ao registrar entrada:', err);
@@ -357,11 +362,11 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
               name="cpf"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>CPF <span className="text-red-500">*</span></FormLabel>
+                  <FormLabel>CPF ou RG<span className="text-red-500">*</span></FormLabel>
                   <div className="flex gap-2">
                     <FormControl>
                       <Input 
-                        placeholder="Digite o CPF" 
+                        placeholder="Digite o CPF ou RG" 
                         {...field} 
                         onBlur={handleCpfBlur}
                         required
@@ -397,10 +402,10 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
               name="apartment"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Apartamento <span className="text-red-500">*</span></FormLabel>
+                  <FormLabel>Bloco e Apartamento <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="Número do apartamento" 
+                      placeholder="Bloco e Número do apartamento" 
                       {...field}
                       required
                     />
@@ -424,6 +429,26 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
                     />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="colaborador"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Colaborador</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Nome do colaborador" 
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  <p className="text-xs text-muted-foreground">
+                    Informe o nome do colaborador que está liberando o(s) visitante(s)
+                  </p>
                 </FormItem>
               )}
             />

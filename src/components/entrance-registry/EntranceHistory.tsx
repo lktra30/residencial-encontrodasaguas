@@ -2,11 +2,13 @@ import { useState, useMemo, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Calendar, Filter, ArrowRight } from "lucide-react";
+import { Search, Filter, ArrowRight } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Combobox } from "@/components/ui/combobox";
 import { 
@@ -34,6 +36,7 @@ interface EntryRecord {
   entryTime: string;
   photo?: string;
   authorizedBy?: string;
+  colaborador?: string;
 }
 
 interface EntranceHistoryProps {
@@ -79,7 +82,8 @@ export function EntranceHistory({ entries = [], limitEntries = false }: Entrance
                   apartment: 'N/A',
                   entryTime: new Date().toLocaleString(),
                   photo: undefined,
-                  authorizedBy: 'Desconhecido'
+                  authorizedBy: 'Desconhecido',
+                  colaborador: ''
                 };
               }
               
@@ -112,7 +116,8 @@ export function EntranceHistory({ entries = [], limitEntries = false }: Entrance
                 apartment: log.going_to_ap || 'Não informado',
                 entryTime: log.lastAccess ? new Date(log.lastAccess).toLocaleString() : new Date().toLocaleString(),
                 photo: photoUrl,
-                authorizedBy: log.authBy || 'Não informado'
+                authorizedBy: log.authBy || 'Não informado',
+                colaborador: log.colaborador || ''
               };
             });
             
@@ -154,13 +159,24 @@ export function EntranceHistory({ entries = [], limitEntries = false }: Entrance
   // Função para converter a string de data para objeto Date
   const parseEntryDate = (entryTime: string) => {
     try {
-      // Tenta converter a string para objeto Date
-      return new Date(entryTime);
+      // Verificar se a string já é uma data válida no formato padrão
+      const dateObj = new Date(entryTime);
+      if (!isNaN(dateObj.getTime())) {
+        return dateObj;
+      }
+      
+      // Tentar diferentes formatos de data brasileiro (DD/MM/YYYY)
+      if (entryTime.includes('/')) {
+        const [datePart] = entryTime.split(' '); // Separar data e hora
+        const [day, month, year] = datePart.split('/');
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      }
+      
+      // Se não der certo, retorna a data atual
+      return new Date();
     } catch (e) {
-      // Fallback para o formato dd/mm/yyyy
-      const [datePart] = entryTime.split(" ");
-      const [day, month, year] = datePart.split("/");
-      return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      console.error('Erro ao converter data:', entryTime, e);
+      return new Date();
     }
   };
 
@@ -179,11 +195,15 @@ export function EntranceHistory({ entries = [], limitEntries = false }: Entrance
         entry.apartment.toLowerCase().includes(apartmentInputFilter.toLowerCase());
       
       // Filtro por data
-      const matchesDate = !selectedDate || (
-        selectedDate && entry.entryTime && (
-          parseEntryDate(entry.entryTime).toDateString() === selectedDate.toDateString()
-        )
-      );
+      let matchesDate = true;
+      if (selectedDate) {
+        const entryDate = parseEntryDate(entry.entryTime);
+        // Comparar apenas ano, mês e dia (ignorando horas)
+        matchesDate = 
+          entryDate.getFullYear() === selectedDate.getFullYear() &&
+          entryDate.getMonth() === selectedDate.getMonth() &&
+          entryDate.getDate() === selectedDate.getDate();
+      }
       
       return matchesSearch && matchesApartmentInput && matchesDate;
     });
@@ -235,7 +255,7 @@ export function EntranceHistory({ entries = [], limitEntries = false }: Entrance
           </div>
 
           {/* Filtro de data */}
-          <div className="flex-1">
+          <div className="flex-1 relative">
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -245,16 +265,17 @@ export function EntranceHistory({ entries = [], limitEntries = false }: Entrance
                     !selectedDate && "text-muted-foreground"
                   )}
                 >
-                  <Calendar className="mr-2 h-4 w-4" />
+                  <CalendarIcon className="mr-2 h-4 w-4" />
                   {selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Filtrar por data"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
+                <Calendar
                   mode="single"
                   selected={selectedDate}
                   onSelect={setSelectedDate}
-                  initialFocus
+                  className="rounded-md border"
+                  locale={ptBR}
                 />
               </PopoverContent>
             </Popover>
@@ -262,12 +283,22 @@ export function EntranceHistory({ entries = [], limitEntries = false }: Entrance
 
           {/* Botão para limpar filtros */}
           <Button 
-            variant="outline" 
-            className="shrink-0" 
+            variant={searchTerm || apartmentInputFilter || selectedDate ? "default" : "outline"}
+            className={cn(
+              "shrink-0 transition-all",
+              (searchTerm || apartmentInputFilter || selectedDate) && "bg-primary text-primary-foreground font-medium"
+            )}
             onClick={clearFilters}
-            disabled={searchTerm === "" && !apartmentInputFilter && !selectedDate}
+            disabled={!searchTerm && !apartmentInputFilter && !selectedDate}
           >
-            Limpar filtros
+            {searchTerm || apartmentInputFilter || selectedDate 
+              ? `Limpar filtros (${[
+                  searchTerm && "texto",
+                  apartmentInputFilter && "apartamento", 
+                  selectedDate && "data"
+                ].filter(Boolean).length})`
+              : "Limpar filtros"
+            }
           </Button>
         </div>
       </CardHeader>
@@ -283,12 +314,13 @@ export function EntranceHistory({ entries = [], limitEntries = false }: Entrance
                   <TableHead>Apartamento</TableHead>
                   <TableHead>Horário de Entrada</TableHead>
                   <TableHead>Liberado Por</TableHead>
+                  <TableHead>Colaborador</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-6">
+                    <TableCell colSpan={7} className="text-center py-6">
                       Carregando histórico...
                     </TableCell>
                   </TableRow>
@@ -327,11 +359,12 @@ export function EntranceHistory({ entries = [], limitEntries = false }: Entrance
                       <TableCell>{entry.apartment}</TableCell>
                       <TableCell>{entry.entryTime}</TableCell>
                       <TableCell>{entry.authorizedBy || <span className="text-muted-foreground italic">Não informado</span>}</TableCell>
+                      <TableCell>{entry.colaborador ? entry.colaborador : <span className="text-muted-foreground italic">Nenhum</span>}</TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                       Nenhuma entrada encontrada
                     </TableCell>
                   </TableRow>
