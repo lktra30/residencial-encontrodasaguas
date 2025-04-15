@@ -259,6 +259,7 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
         colaborador: data.colaborador || null
       };
       console.log("[DEBUG] Dados do log de acesso:", accessLogData);
+      console.log("[DEBUG] Valor do campo colaborador:", data.colaborador);
       
       const { data: accessLog, error } = await createAccessLog(accessLogData);
       

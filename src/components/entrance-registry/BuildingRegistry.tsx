@@ -40,6 +40,8 @@ interface EntryRecord {
   entryTime: string;
   photo?: string; // Caminho da foto
   authorizedBy?: string; // Quem autorizou (authBy no schema)
+  visitCount?: number;
+  colaborador?: string;
 }
 
 interface BuildingRegistryProps {
@@ -51,6 +53,8 @@ interface BuildingRegistryProps {
     entryTime: string;
     photo?: string;
     authorizedBy?: string;
+    visitCount?: number;
+    colaborador?: string;
   }) => void;
 }
 
@@ -161,7 +165,9 @@ export function BuildingRegistry({ onNewEntry }: BuildingRegistryProps) {
         apartment: entry.apartment,
         entryTime: entry.entryTime,
         photo: entry.photo,
-        authorizedBy: entry.authorizedBy
+        authorizedBy: entry.authorizedBy,
+        visitCount: entry.visitCount,
+        colaborador: entry.colaborador
       });
     }
   };
@@ -174,33 +180,37 @@ export function BuildingRegistry({ onNewEntry }: BuildingRegistryProps) {
   const handleQuickEntryConfirm = (data: { 
     apartment: string; 
     authorizedByName: string;
+    colaborador?: string;
   }) => {
     if (!selectedVisitor) return;
 
-    // Criar novo registro de entrada
-    const newEntry = {
-      id: Date.now(),
+    const newEntry: EntryRecord = {
+      id: Date.now(), // ID temporário apenas para a interface
       name: selectedVisitor.name,
-      document: selectedVisitor.rg,
+      rg: selectedVisitor.rg,
       apartment: data.apartment,
       entryTime: new Date().toLocaleString(),
-      photo: selectedVisitor.photo,
       authorizedBy: data.authorizedByName,
+      visitCount: (selectedVisitor.visitCount || 0) + 1,
+      photo: selectedVisitor.photo,
+      colaborador: data.colaborador
     };
 
-    // Adicionar à lista de entradas
-    handleNewEntry(newEntry);
+    // Adicionar à lista de entries
+    setEntries(prev => [newEntry, ...prev]);
+    
+    // Callback para o componente pai
+    if (onNewEntry) {
+      onNewEntry(newEntry);
+    }
 
-    // Mostrar toast de sucesso
+    // Notificação de sucesso
     toast({
-      title: "Entrada registrada com sucesso",
-      description: `${selectedVisitor.name} registrado para o apartamento ${data.apartment}, autorizado por ${data.authorizedByName}`,
+      title: "Entrada registrada com sucesso!",
+      description: `${selectedVisitor.name} registrado(a) para o apartamento ${data.apartment}${data.colaborador ? `, colaborador: ${data.colaborador}` : ''}.`,
     });
 
-    // Limpar busca
-    setSearchQuery("");
-    setFilteredVisitors([]);
-    setIsSearching(false);
+    // Limpar seleção
     setSelectedVisitor(null);
   };
 
