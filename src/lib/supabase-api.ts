@@ -22,6 +22,7 @@ export type AccessLog = {
   lastAccess?: string;
   createdAt?: string;
   visitors?: Visitor;
+  colaborador?: string | null;
 };
 
 // Carrega os dados mockados do arquivo db.json
@@ -348,7 +349,8 @@ export async function createAccessLog(log: AccessLog) {
         authBy: log.authBy,
         photoPath: photoPath,
         lastAccess: log.lastAccess || new Date().toISOString(),
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        colaborador: log.colaborador || null
       }])
       .select();
     
