@@ -187,7 +187,7 @@ export function BuildingRegistry({ onNewEntry }: BuildingRegistryProps) {
     const newEntry: EntryRecord = {
       id: Date.now(), // ID temporário apenas para a interface
       name: selectedVisitor.name,
-      rg: selectedVisitor.rg,
+      document: selectedVisitor.rg,
       apartment: data.apartment,
       entryTime: new Date().toLocaleString(),
       authorizedBy: data.authorizedByName,
@@ -201,7 +201,17 @@ export function BuildingRegistry({ onNewEntry }: BuildingRegistryProps) {
     
     // Callback para o componente pai
     if (onNewEntry) {
-      onNewEntry(newEntry);
+      onNewEntry({
+        id: typeof newEntry.id === 'string' ? parseInt(newEntry.id) : newEntry.id,
+        name: newEntry.name,
+        cpf: newEntry.document,
+        apartment: newEntry.apartment,
+        entryTime: newEntry.entryTime,
+        photo: newEntry.photo,
+        authorizedBy: newEntry.authorizedBy,
+        visitCount: newEntry.visitCount,
+        colaborador: newEntry.colaborador
+      });
     }
 
     // Notificação de sucesso

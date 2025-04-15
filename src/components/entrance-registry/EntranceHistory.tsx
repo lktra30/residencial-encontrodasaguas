@@ -109,6 +109,10 @@ export function EntranceHistory({ entries = [], limitEntries = false }: Entrance
                 console.error('Erro ao processar URL da foto:', error, 'Photo path:', visitor.photo);
               }
               
+              // Certifique-se de usar o valor do campo colaborador
+              const colaboradorValue = log.colaborador || '';
+              console.log(`[DEBUG] Valor do campo colaborador para o log ${log.id}: ${colaboradorValue}`);
+              
               return {
                 id: log.id || parseInt(String(Math.random() * 10000)),
                 name: visitor?.name || 'Desconhecido',
@@ -117,7 +121,7 @@ export function EntranceHistory({ entries = [], limitEntries = false }: Entrance
                 entryTime: log.lastAccess ? new Date(log.lastAccess).toLocaleString() : new Date().toLocaleString(),
                 photo: photoUrl,
                 authorizedBy: log.authBy || 'Não informado',
-                colaborador: log.colaborador || ''
+                colaborador: colaboradorValue
               };
             });
             

@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS access_logs (
   entry_time TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   photo_path TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  going_to_ap TEXT
+  going_to_ap TEXT,
+  colaborador TEXT
 );
 
 -- Função para incrementar contador de visitas

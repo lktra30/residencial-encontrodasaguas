@@ -195,7 +195,8 @@ export async function getAccessLogs(limit = 20) {
       const visitor = data.visitors.find(v => v.id === log.visitorId);
       return {
         ...log,
-        visitors: visitor
+        visitors: visitor,
+        colaborador: log.colaborador || null
       };
     });
     
@@ -206,10 +207,10 @@ export async function getAccessLogs(limit = 20) {
     // Alterando a forma como fazemos a consulta para garantir que os relacionamentos funcionem
     console.log("Buscando logs de acesso no Supabase...");
     
-    // Primeiro, buscar todos os logs de acesso sem limite (usando um valor alto)
+    // Primeiro, buscar todos os logs de acesso incluindo o campo colaborador
     const { data: accessLogs, error: logsError } = await supabase
       .from(tables.ACCESS_LOGS)
-      .select("*")
+      .select("*, colaborador")
       .order("lastAccess", { ascending: false })
       .limit(limit === 500 ? 5000 : limit); // Para garantir capturar todos os logs quando solicitado
       
