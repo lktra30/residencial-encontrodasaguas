@@ -10,6 +10,8 @@ export type Visitor = {
   visitCount?: number;
   lastEntrance?: string;
   visitingApartment?: string;
+  isBanned?: boolean;
+  banReason?: string;
 };
 
 export type AccessLog = {
@@ -439,4 +441,27 @@ export async function uploadVisitorPhoto(file: File): Promise<{
       reader.readAsDataURL(file);
     });
   }
+}
+
+export async function checkIfCpfIsBanned(cpf: string) {
+  if (isMockDataEnabled()) {
+    const data = await loadMockData();
+    const visitor = data?.visitors.find(v => v.cpf === cpf && v.isBanned === true);
+    return { 
+      data: visitor ? { isBanned: true, reason: visitor.banReason } : null, 
+      error: null 
+    };
+  }
+
+  const { data, error } = await supabase
+    .from(tables.VISITORS)
+    .select("id, isBanned, banReason")
+    .eq("cpf", cpf)
+    .eq("isBanned", true)
+    .single();
+  
+  return { 
+    data: data ? { isBanned: true, reason: data.banReason } : null, 
+    error 
+  };
 } 

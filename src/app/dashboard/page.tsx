@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   BarChart3, 
   Users, 
-  ArrowLeft 
+  ArrowLeft,
+  Ban 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -164,6 +165,7 @@ export default function DashboardPage() {
       <Tabs defaultValue="logs" className="space-y-4">
         <TabsList>
           <TabsTrigger value="logs">Logs de Entrada</TabsTrigger>
+          <TabsTrigger value="bans">Banimentos</TabsTrigger>
           <TabsTrigger value="analytics">Análises</TabsTrigger>
         </TabsList>
         
@@ -184,6 +186,28 @@ export default function DashboardPage() {
               ) : (
                 <EntranceHistory entries={entries} limitEntries={false} />
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="bans">
+          <Card>
+            <CardHeader>
+              <CardTitle>Gerenciar Banimentos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Link href="/dashboard/manage-bans" passHref>
+                  <Button className="w-full">
+                    <Ban className="h-4 w-4 mr-2" />
+                    Gerenciar Visitantes Banidos
+                  </Button>
+                </Link>
+                <p className="text-muted-foreground text-sm">
+                  Nesta seção você pode banir ou remover banimentos de visitantes.
+                  Visitantes banidos não poderão ter acesso ao condomínio.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

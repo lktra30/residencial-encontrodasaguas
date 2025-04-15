@@ -7,11 +7,12 @@ import { toast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { PhotoCapture } from "./PhotoCapture";
-import { getVisitorByCpf, createVisitor, createAccessLog, uploadVisitorPhoto } from "@/lib/supabase-api";
+import { getVisitorByCpf, createVisitor, createAccessLog, uploadVisitorPhoto, checkIfCpfIsBanned } from "@/lib/supabase-api";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { X } from "lucide-react";
+import { X, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Definindo o schema de validação com Zod
 const formSchema = z.object({
@@ -47,6 +48,8 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
   const [photoRequired, setPhotoRequired] = useState(false);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
+  const [isBanned, setIsBanned] = useState(false);
+  const [banReason, setBanReason] = useState<string | null>(null);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -65,6 +68,23 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
 
     setIsLoading(true);
     try {
+      // Verificar se o visitante está banido
+      const { data: bannedData } = await checkIfCpfIsBanned(cpf);
+      
+      if (bannedData) {
+        setIsBanned(true);
+        setBanReason(bannedData.reason || "Motivo não especificado");
+        toast({
+          title: "Visitante banido",
+          description: `Este visitante está na lista de banidos. Motivo: ${bannedData.reason || "Não especificado"}`,
+          variant: "destructive"
+        });
+      } else {
+        setIsBanned(false);
+        setBanReason(null);
+      }
+
+      // Verificar se o visitante existe
       const { data: visitor, error } = await getVisitorByCpf(cpf);
       
       if (visitor) {
@@ -72,10 +92,13 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
         setVisitorFound(true);
         // Se o visitante já existe e tem foto, não obrigamos nova foto
         setPhotoRequired(false);
-        toast({
-          title: "Visitante encontrado",
-          description: `${visitor.name} já está cadastrado no sistema.`,
-        });
+        
+        if (!isBanned) {
+          toast({
+            title: "Visitante encontrado",
+            description: `${visitor.name} já está cadastrado no sistema.`,
+          });
+        }
       } else {
         setVisitorFound(false);
         // Se é um novo visitante, exigimos foto
@@ -89,6 +112,33 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
   };
 
   const onSubmit = async (data: FormValues) => {
+    // Verificar se o visitante está banido
+    if (isBanned) {
+      toast({
+        title: "Entrada não permitida",
+        description: `Este visitante está banido. Motivo: ${banReason || "Não especificado"}`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Realizar uma nova verificação de banimento antes de prosseguir
+    try {
+      const { data: bannedData } = await checkIfCpfIsBanned(data.cpf);
+      if (bannedData) {
+        setIsBanned(true);
+        setBanReason(bannedData.reason || "Motivo não especificado");
+        toast({
+          title: "Entrada não permitida",
+          description: `Este visitante está banido. Motivo: ${bannedData.reason || "Não especificado"}`,
+          variant: "destructive"
+        });
+        return;
+      }
+    } catch (err) {
+      console.error('Erro ao verificar banimento:', err);
+    }
+
     // Verificar se a foto é obrigatória e não foi fornecida
     if (photoRequired && !photoFile && !visitorFound) {
       toast({
@@ -290,6 +340,16 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
         <CardDescription>Cadastre uma nova pessoa que está entrando no prédio</CardDescription>
       </CardHeader>
       <CardContent>
+        {isBanned && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Visitante banido</AlertTitle>
+            <AlertDescription>
+              Este visitante está na lista de banidos. Entrada não permitida.<br/>
+              Motivo: {banReason || "Não especificado"}
+            </AlertDescription>
+          </Alert>
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
