@@ -1,5 +1,5 @@
 // Credenciais pré-definidas para login no sistema
 export const userCredentials = {
-  username: "admin",
-  password: "admin123"
+  username: "admin01",
+  password: "adm3467"
 }; 
