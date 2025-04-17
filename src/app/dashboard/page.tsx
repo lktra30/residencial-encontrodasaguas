@@ -206,18 +206,18 @@ export default function DashboardPage() {
         <TabsContent value="bans">
           <Card>
             <CardHeader>
-              <CardTitle>Gerenciar Banimentos</CardTitle>
+              <CardTitle>Gerenciar Bloqueios</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <Link href="/dashboard/manage-bans" passHref>
                   <Button className="w-full">
                     <Ban className="h-4 w-4 mr-2" />
-                    Gerenciar Visitantes Banidos
+                    Gerenciar Visitantes Bloqueados
                   </Button>
                 </Link>
                 <p className="text-muted-foreground text-sm">
-                  Nesta seção você pode banir ou remover banimentos de visitantes.
+                  Nesta seção você pode banir ou remover bloqueios de visitantes.
                   Visitantes banidos não poderão ter acesso ao condomínio.
                 </p>
               </div>
