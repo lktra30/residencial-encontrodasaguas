@@ -25,6 +25,7 @@ interface EntryRecord {
   entryTime: string;
   photo?: string;
   authorizedBy?: string;
+  colaborador?: string;
 }
 
 export default function HomePage() {
@@ -76,9 +77,17 @@ export default function HomePage() {
         if (data) {
           // Converter dados do Supabase ou mockados
           const formattedEntries = data.map(log => {
-            // Verificação segura para garantir que os dados existam
-            const visitor = log.visitors || {};
+            const visitor = (log as any).visitors || {};
             let photoUrl = undefined;
+            
+            // Extrair valor de colaborador para exibição
+            let colaboradorValue = "";
+            if ((log as any).colaborador !== undefined && (log as any).colaborador !== null) {
+              const trimmedCollab = String((log as any).colaborador).trim();
+              if (trimmedCollab && trimmedCollab !== "null" && trimmedCollab !== "undefined") {
+                colaboradorValue = trimmedCollab;
+              }
+            }
             
             // Verificando se log contém valores válidos
             if (!log || typeof log !== 'object') {
@@ -90,7 +99,8 @@ export default function HomePage() {
                 apartment: 'N/A',
                 entryTime: new Date().toLocaleString(),
                 photo: undefined,
-                authorizedBy: 'Desconhecido'
+                authorizedBy: 'Desconhecido',
+                colaborador: colaboradorValue
               };
             }
             
@@ -116,7 +126,8 @@ export default function HomePage() {
               apartment: log.going_to_ap || 'Não informado',
               entryTime: log.lastAccess ? new Date(log.lastAccess).toLocaleString() : new Date().toLocaleString(),
               photo: photoUrl,
-              authorizedBy: log.authBy || 'Não informado'
+              authorizedBy: log.authBy || 'Não informado',
+              colaborador: colaboradorValue
             };
           });
           
@@ -170,7 +181,7 @@ export default function HomePage() {
     
     toast({
       title: "Entrada registrada",
-      description: `${entry.name} entrou no prédio com sucesso.`,
+      description: `${entry.name} entrou no condomínio com sucesso.`,
     });
   };
 
@@ -187,7 +198,7 @@ export default function HomePage() {
       <main className="container mx-auto py-6 px-4 md:px-6 space-y-8">
         <Card className="border-none shadow-sm">
           <CardHeader className="pb-4">
-            <CardTitle className="text-2xl font-bold">Controle de Acesso ao Prédio</CardTitle>
+            <CardTitle className="text-2xl font-bold">Controle de Acesso ao Condomínio</CardTitle>
             <CardDescription>
               Sistema de registro de entrada de visitantes
             </CardDescription>

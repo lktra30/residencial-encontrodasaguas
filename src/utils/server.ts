@@ -14,8 +14,8 @@ export const supabase = createClient(supabaseUrl || "", supabaseKey || "");
 
 // Helpers para dados mockados
 export const isMockDataEnabled = () => {
-  // Remover o forçamento para true e voltar ao comportamento original
-  return useMockData || !supabaseUrl || !supabaseKey;
+  // Usar apenas o flag USE_MOCK_DATA para controlar mock, sem fallback automático
+  return useMockData;
 };
 
 // Funções auxiliares para o Supabase

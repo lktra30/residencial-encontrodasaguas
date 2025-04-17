@@ -1,6 +1,7 @@
+"use client";
 
 import { useState } from "react";
-import { Building2, Settings, User } from "lucide-react";
+import { Building2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,9 +11,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { deleteCookie } from 'cookies-next';
 
 export function MainHeader() {
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    // Remover token de autenticação (usando cookies ou localStorage)
+    localStorage.removeItem("isLoggedIn");
+    deleteCookie('isLoggedIn');
+    
+    toast({
+      title: "Logout realizado",
+      description: "Você foi desconectado com sucesso",
+    });
+    
+    // Redirecionar para a página de login
+    router.push("/login");
+  };
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -23,7 +42,6 @@ export function MainHeader() {
         </div>
         
         <div className="flex items-center gap-4">
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -31,9 +49,9 @@ export function MainHeader() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Logout</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>Sair</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

@@ -256,10 +256,11 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
         going_to_ap: data.apartment,
         authBy: data.authorizedBy || "Portaria",
         lastAccess: new Date().toISOString(),
-        colaborador: data.colaborador || null
+        colaborador: data.colaborador && data.colaborador.trim() !== '' ? data.colaborador.trim() : "" 
       };
       console.log("[DEBUG] Dados do log de acesso:", accessLogData);
       console.log("[DEBUG] Valor do campo colaborador:", data.colaborador);
+      console.log("[DEBUG] Valor do campo colaborador processado:", accessLogData.colaborador);
       
       const { data: accessLog, error } = await createAccessLog(accessLogData);
       
@@ -272,6 +273,12 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
 
       // Criar objeto para enviar ao componente pai
       if (accessLog && Array.isArray(accessLog) && accessLog.length > 0) {
+        // Garantir que o valor do colaborador seja tratado corretamente
+        const colaboradorValue = data.colaborador && data.colaborador.trim() !== '' ? 
+          data.colaborador.trim() : "";
+        
+        console.log("[DEBUG] Valor final do colaborador para novo registro:", colaboradorValue === "" ? '""' : colaboradorValue);
+        
         const newEntry: EntryRecord = {
           id: accessLog[0].id,
           name: data.name,
@@ -280,7 +287,7 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
           entryTime: new Date().toLocaleString(),
           photo: photoUrl || undefined,
           authorizedBy: data.authorizedBy,
-          colaborador: data.colaborador
+          colaborador: colaboradorValue
         };
 
         // Chamar callback para adicionar ao histórico
@@ -343,7 +350,7 @@ export function EntranceForm({ onNewEntry }: EntranceFormProps) {
     <Card>
       <CardHeader>
         <CardTitle>Criar Cadastro</CardTitle>
-        <CardDescription>Cadastre uma nova pessoa que está entrando no prédio</CardDescription>
+        <CardDescription>Cadastre uma nova pessoa que está entrando no condomínio</CardDescription>
       </CardHeader>
       <CardContent>
         {isBanned && (

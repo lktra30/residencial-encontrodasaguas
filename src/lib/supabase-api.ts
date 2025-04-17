@@ -196,7 +196,7 @@ export async function getAccessLogs(limit = 20) {
       return {
         ...log,
         visitors: visitor,
-        colaborador: log.colaborador || null
+        colaborador: log.colaborador || ""
       };
     });
     
@@ -204,15 +204,24 @@ export async function getAccessLogs(limit = 20) {
   }
 
   try {
-    // Alterando a forma como fazemos a consulta para garantir que os relacionamentos funcionem
-    console.log("Buscando logs de acesso no Supabase...");
+    // Alterando a consulta SQL para listar explicitamente todos os campos incluindo "colaborador"
+    console.log("Buscando logs de acesso no Supabase com campo colaborador...");
     
-    // Primeiro, buscar todos os logs de acesso incluindo o campo colaborador
+    // Consulta explícita para garantir que o campo colaborador seja incluído
     const { data: accessLogs, error: logsError } = await supabase
       .from(tables.ACCESS_LOGS)
-      .select("*, colaborador")
+      .select(`
+        id, 
+        visitorId, 
+        going_to_ap, 
+        authBy, 
+        lastAccess, 
+        createdAt, 
+        photoPath, 
+        colaborador
+      `)
       .order("lastAccess", { ascending: false })
-      .limit(limit === 500 ? 5000 : limit); // Para garantir capturar todos os logs quando solicitado
+      .limit(limit === 500 ? 5000 : limit);
       
     if (logsError) {
       console.error("Erro na consulta de logs ao Supabase:", logsError);
@@ -225,6 +234,11 @@ export async function getAccessLogs(limit = 20) {
     }
 
     console.log(`Encontrados ${accessLogs.length} logs de acesso`);
+    
+    // Para cada registro, fazer log do campo colaborador para depuração
+    accessLogs.forEach(log => {
+      console.log(`[DEBUG] Log ID ${log.id} - colaborador: "${log.colaborador}"`);
+    });
     
     // Agora, para cada log, buscar o visitante correspondente
     const logsWithVisitors = await Promise.all(
@@ -244,17 +258,46 @@ export async function getAccessLogs(limit = 20) {
                 name: 'Visitante não encontrado',
                 cpf: 'N/A',
                 photo: null
-              }
+              },
+              // Manter explicitamente o campo colaborador
+              colaborador: log.colaborador
             };
           }
           
-          return {
-            ...log,
+          // Garantir que o campo colaborador seja mantido no objeto retornado
+          let colaboradorValue = "";
+          
+          if (log.colaborador !== undefined && 
+              log.colaborador !== null && 
+              log.colaborador !== "undefined" && 
+              log.colaborador !== "null" &&
+              String(log.colaborador).trim() !== "") {
+            colaboradorValue = String(log.colaborador).trim();
+          }
+          
+          console.log(`[DEBUG] Log ID ${log.id} - Valor do campo colaborador após processamento: "${colaboradorValue}"`);
+          
+          // Criar um novo objeto para garantir que os campos estejam em ordem e que colaborador seja incluído
+          const resultObject = {
+            id: log.id,
+            visitorId: log.visitorId,
+            going_to_ap: log.going_to_ap,
+            authBy: log.authBy,
+            lastAccess: log.lastAccess,
+            createdAt: log.createdAt,
+            photoPath: log.photoPath,
+            colaborador: colaboradorValue,
             visitors: visitor
           };
+          
+          console.log(`[DEBUG] Objeto resultante completo: ${JSON.stringify(resultObject)}`);
+          return resultObject;
         } catch (err) {
           console.error(`Erro ao processar log ${log.id}:`, err);
-          return log;
+          return {
+            ...log,
+            colaborador: log.colaborador // Garantir que o campo seja mantido mesmo em caso de erro
+          };
         }
       })
     );
@@ -269,7 +312,8 @@ export async function getAccessLogs(limit = 20) {
       const visitor = data.visitors.find(v => v.id === log.visitorId);
       return {
         ...log,
-        visitors: visitor
+        visitors: visitor,
+        colaborador: log.colaborador || null // Adicionar campo colaborador também no fallback
       };
     }) || [];
     
@@ -340,6 +384,20 @@ export async function createAccessLog(log: AccessLog) {
     // Usar a mesma foto do visitante para o log de acesso
     const photoPath = visitorData.photo;
     
+    // Tratar explicitamente o valor do campo colaborador para garantir que seja salvo corretamente
+    // Como a coluna é TEXT com default "", devemos usar string vazia em vez de null
+    let colaboradorValue = "";
+    if (log.colaborador !== undefined && log.colaborador !== null) {
+      if (log.colaborador === 'null' || log.colaborador === 'undefined') {
+        colaboradorValue = "";
+      } else {
+        const trimmed = String(log.colaborador).trim();
+        colaboradorValue = trimmed;
+      }
+    }
+    
+    console.log(`[DEBUG] Salvando log de acesso com colaborador: "${colaboradorValue}"`);
+    
     // Transação para criar log e atualizar visitante
     const { data, error } = await supabase
       .from(tables.ACCESS_LOGS)
@@ -351,9 +409,16 @@ export async function createAccessLog(log: AccessLog) {
         photoPath: photoPath,
         lastAccess: log.lastAccess || new Date().toISOString(),
         createdAt: new Date().toISOString(),
-        colaborador: log.colaborador || null
+        colaborador: colaboradorValue
       }])
       .select();
+    
+    if (error) {
+      console.error("Erro ao inserir log de acesso:", error);
+      return { data: null, error };
+    }
+    
+    console.log("[DEBUG] Log de acesso criado com sucesso, dados retornados:", JSON.stringify(data));
     
     if (!error && data) {
       // Atualizar informações do visitante

@@ -242,7 +242,7 @@ const Dashboard = () => {
                 Visitantes Únicos
               </CardTitle>
               <CardDescription>
-                Todos os visitantes que já entraram no prédio
+                Todos os visitantes que já entraram no condomínio
               </CardDescription>
               <div className="pt-2">
                 <Input

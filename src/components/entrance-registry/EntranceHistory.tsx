@@ -1,8 +1,8 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, ArrowRight } from "lucide-react";
+import { Search, Filter, ArrowRight, RefreshCcw } from "lucide-react";
 import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -55,94 +55,278 @@ export function EntranceHistory({ entries = [], limitEntries = false }: Entrance
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   // Estado para armazenar a foto selecionada
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  // Estado para controlar se já carregamos os dados para evitar chamadas repetidas
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  // Carregar entradas do Supabase se não forem fornecidas como prop
-  useEffect(() => {
-    const loadEntriesFromSupabase = async () => {
-      if (entries.length === 0) {
-        setLoading(true);
+  // Guardar dados em localStorage para persistência entre recarregamentos
+  const saveToLocalStorage = useCallback((data: EntryRecord[]) => {
+    try {
+      // Temporariamente desativado para depuração
+      // localStorage.setItem('entranceHistoryData', JSON.stringify(data));
+      console.log('[DEBUG] Salvamento em localStorage desativado para depuração:', data.length, 'registros');
+    } catch (error) {
+      console.error('[DEBUG] Erro ao salvar dados em localStorage:', error);
+    }
+  }, []);
+
+  // Função para atualizar os dados forçadamente
+  const refreshData = useCallback(async () => {
+    console.log('[DEBUG] Atualizando dados do histórico manualmente');
+    setLoading(true);
+    
+    try {
+      // Buscar dados diretamente do Supabase
+      const { data, error } = await getAccessLogs(limitEntries ? 10 : 500);
+      
+      if (error) {
+        console.error('[DEBUG] Erro ao atualizar dados do Supabase:', error);
+        return;
+      }
+      
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        console.log('[DEBUG] Nenhum dado retornado na atualização');
+        return;
+      }
+      
+      console.log(`[DEBUG] Dados brutos recebidos na atualização: ${data.length} registros`);
+      
+      // Transformar dados mantendo a mesma abordagem simplificada
+      const transformedEntries = data.map(log => {
+        // Extrair valor do colaborador com tratamento mínimo
+        let colaboradorValue = "";
+        if (log.colaborador !== undefined && log.colaborador !== null) {
+          if (typeof log.colaborador === 'string') {
+            if (log.colaborador !== "null" && log.colaborador !== "undefined") {
+              colaboradorValue = log.colaborador.trim();
+            }
+          } else {
+            colaboradorValue = String(log.colaborador).trim();
+          }
+        }
+        
+        console.log(`[DEBUG] Refresh - Valor do colaborador: "${colaboradorValue}" (original: "${log.colaborador}")`);
+        
+        const visitor = (log as any).visitors || {};
+        let photoUrl;
+        
         try {
-          // Buscar todos os registros de acesso sem limite rígido se não for limitEntries
-          const { data, error } = await getAccessLogs(limitEntries ? 10 : 500);
-          if (error) {
-            console.error('Erro ao carregar histórico:', error);
-            return;
+          if (visitor && visitor.photo) {
+            if (visitor.photo.startsWith('data:')) {
+              photoUrl = visitor.photo;
+            } else if (visitor.photo.startsWith('mock_photos')) {
+              photoUrl = visitor.photo;
+            } else {
+              photoUrl = supabase.storage.from('photos').getPublicUrl(visitor.photo).data.publicUrl;
+            }
+          }
+        } catch (photoError) {
+          console.error('[DEBUG] Erro ao processar URL da foto:', photoError);
+        }
+        
+        // Criar objeto com dados mínimos
+        return {
+          id: log.id,
+          name: visitor?.name || 'Desconhecido',
+          cpf: visitor?.cpf || 'Não informado',
+          apartment: log.going_to_ap || 'Não informado',
+          entryTime: log.lastAccess ? new Date(log.lastAccess).toLocaleString() : new Date().toLocaleString(),
+          photo: photoUrl,
+          authorizedBy: log.authBy || 'Não informado',
+          colaborador: colaboradorValue
+        };
+      });
+      
+      // Atualizar estado diretamente
+      setLoadedEntries(transformedEntries);
+    } catch (err) {
+      console.error('[DEBUG] Erro inesperado na atualização:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [limitEntries]);
+
+  // Carregar dados do localStorage na inicialização
+  useEffect(() => {
+    try {
+      // Temporariamente desativado para depuração
+      /*
+      const savedData = localStorage.getItem('entranceHistoryData');
+      if (savedData) {
+        const parsedData = JSON.parse(savedData) as EntryRecord[];
+        console.log('[DEBUG] Dados carregados do localStorage:', parsedData.length, 'registros');
+        setLoadedEntries(parsedData);
+        setDataLoaded(true);
+      }
+      */
+      console.log('[DEBUG] Carregamento do localStorage desativado para depuração');
+    } catch (error) {
+      console.error('[DEBUG] Erro ao carregar dados do localStorage:', error);
+    }
+  }, []);
+
+  // REDEFINIÇÃO: Usar uma abordagem diferente para lidar com os dados do Supabase
+  // Carregar entradas do Supabase se não forem fornecidas como prop e não carregadas do localStorage
+  useEffect(() => {
+    console.log('[DEBUG] useEffect para carregar dados do Supabase foi acionado');
+    
+    async function fetchData() {
+      setLoading(true);
+      console.log('[DEBUG] Iniciando busca direta no Supabase');
+      
+      try {
+        // Buscar dados diretamente do Supabase
+        const { data, error } = await getAccessLogs(limitEntries ? 10 : 500);
+        
+        if (error) {
+          console.error('[DEBUG] Erro ao buscar dados do Supabase:', error);
+          return;
+        }
+        
+        if (!data || !Array.isArray(data) || data.length === 0) {
+          console.log('[DEBUG] Nenhum dado retornado do Supabase');
+          setLoadedEntries([]);
+          return;
+        }
+        
+        console.log(`[DEBUG] Dados brutos recebidos do Supabase: ${data.length} registros`);
+        
+        // Transformar dados para o formato necessário, focando em preservar o valor do colaborador
+        const transformedEntries = data.map(log => {
+          // Fazer log detalhado de cada objeto recebido
+          console.log(`[DEBUG] Log bruto do Supabase para ID ${log.id}:`, JSON.stringify({
+            id: log.id,
+            colaborador: log.colaborador,
+            colaboradorType: typeof log.colaborador
+          }));
+          
+          // Extrair valor do colaborador com tratamento mínimo
+          let colaboradorValue = "";
+          if (log.colaborador !== undefined && log.colaborador !== null) {
+            if (typeof log.colaborador === 'string') {
+              if (log.colaborador !== "null" && log.colaborador !== "undefined") {
+                colaboradorValue = log.colaborador.trim();
+              }
+            } else {
+              colaboradorValue = String(log.colaborador).trim();
+            }
           }
           
-          if (data) {
-            console.log(`Carregados ${data.length} registros de acesso`);
-            // Converter dados do Supabase para o formato esperado pelo componente
-            const formattedEntries = data.map(log => {
-              if (!log || typeof log !== 'object') {
-                console.warn('Registro de acesso inválido:', log);
-                return {
-                  id: Math.random(),
-                  name: 'Erro no registro',
-                  cpf: 'Inválido',
-                  apartment: 'N/A',
-                  entryTime: new Date().toLocaleString(),
-                  photo: undefined,
-                  authorizedBy: 'Desconhecido',
-                  colaborador: ''
-                };
+          console.log(`[DEBUG] Valor do colaborador após processamento básico: "${colaboradorValue}"`);
+          
+          const visitor = (log as any).visitors || {};
+          let photoUrl;
+          
+          try {
+            if (visitor && visitor.photo) {
+              if (visitor.photo.startsWith('data:')) {
+                photoUrl = visitor.photo;
+              } else if (visitor.photo.startsWith('mock_photos')) {
+                photoUrl = visitor.photo;
+              } else {
+                photoUrl = supabase.storage.from('photos').getPublicUrl(visitor.photo).data.publicUrl;
               }
-              
-              const visitor = log.visitors || {};
-              let photoUrl;
-              
-              try {
-                if (visitor && visitor.photo) {
-                  // Verificar formato da foto (base64, mock ou storage)
-                  if (visitor.photo.startsWith('data:')) {
-                    // É uma foto base64
-                    photoUrl = visitor.photo;
-                  } else if (visitor.photo.startsWith('mock_photos')) {
-                    // É uma foto mockada
-                    photoUrl = visitor.photo;
-                  } else {
-                    // Assumir que é um caminho no storage do Supabase (sem pastas)
-                    photoUrl = supabase.storage.from('photos').getPublicUrl(visitor.photo).data.publicUrl;
-                    console.log(`[DEBUG] URL da foto do storage: ${photoUrl}`);
-                  }
-                }
-              } catch (error) {
-                console.error('Erro ao processar URL da foto:', error, 'Photo path:', visitor.photo);
-              }
-              
-              // Certifique-se de usar o valor do campo colaborador
-              const colaboradorValue = log.colaborador || '';
-              console.log(`[DEBUG] Valor do campo colaborador para o log ${log.id}: ${colaboradorValue}`);
-              
-              return {
-                id: log.id || parseInt(String(Math.random() * 10000)),
-                name: visitor?.name || 'Desconhecido',
-                cpf: visitor?.cpf || 'Não informado',
-                apartment: log.going_to_ap || 'Não informado',
-                entryTime: log.lastAccess ? new Date(log.lastAccess).toLocaleString() : new Date().toLocaleString(),
-                photo: photoUrl,
-                authorizedBy: log.authBy || 'Não informado',
-                colaborador: colaboradorValue
-              };
-            });
-            
-            setLoadedEntries(formattedEntries);
+            }
+          } catch (photoError) {
+            console.error('[DEBUG] Erro ao processar URL da foto:', photoError);
           }
-        } catch (err) {
-          console.error('Erro ao carregar entradas:', err);
-        } finally {
-          setLoading(false);
-        }
+          
+          // Criar objeto com dados mínimos
+          return {
+            id: log.id,
+            name: visitor?.name || 'Desconhecido',
+            cpf: visitor?.cpf || 'Não informado',
+            apartment: log.going_to_ap || 'Não informado',
+            entryTime: log.lastAccess ? new Date(log.lastAccess).toLocaleString() : new Date().toLocaleString(),
+            photo: photoUrl,
+            authorizedBy: log.authBy || 'Não informado',
+            colaborador: colaboradorValue // Usar o valor processado
+          };
+        });
+        
+        console.log('[DEBUG] Entradas processadas finais:', transformedEntries.map(e => ({
+          id: e.id, 
+          colaborador: e.colaborador,
+          colaboradorType: typeof e.colaborador
+        })));
+        
+        // Salvar diretamente no estado
+        setLoadedEntries(transformedEntries);
+      } catch (err) {
+        console.error('[DEBUG] Erro inesperado ao buscar dados:', err);
+      } finally {
+        setLoading(false);
       }
-    };
+    }
+    
+    fetchData();
+  }, [limitEntries]);
 
-    loadEntriesFromSupabase();
-  }, [entries, limitEntries]);
+  // Efeito para atualizar o localStorage quando novas entradas são recebidas como props
+  useEffect(() => {
+    if (entries.length > 0) {
+      console.log('[DEBUG] Recebidas novas entradas via props:', entries.length, 'registros');
+      
+      // Verificar e corrigir o campo colaborador nas novas entradas
+      const correctedEntries = entries.map(entry => {
+        let colaboradorValue = entry.colaborador || '';
+        
+        // Verificar se o valor é "null" como string
+        if (colaboradorValue === 'null' || colaboradorValue === 'undefined') {
+          colaboradorValue = '';
+        }
+        
+        return {
+          ...entry,
+          colaborador: colaboradorValue
+        };
+      });
+      
+      // Mesclar com entradas existentes evitando duplicações
+      const existingIds = loadedEntries.map(e => e.id);
+      const newEntries = correctedEntries.filter(e => !existingIds.includes(e.id));
+      
+      if (newEntries.length > 0) {
+        const mergedEntries = [...newEntries, ...loadedEntries];
+        console.log('[DEBUG] Novas entradas mescladas, total:', mergedEntries.length);
+        
+        setLoadedEntries(mergedEntries);
+        saveToLocalStorage(mergedEntries);
+      }
+    }
+  }, [entries, loadedEntries, saveToLocalStorage]);
 
   // Combinar entradas fornecidas como prop com entradas carregadas do Supabase
   const allEntries = useMemo(() => {
     // Ordenar por data (mais recente primeiro)
     const entriesData = entries.length > 0 ? entries : loadedEntries;
-    return entriesData.sort((a, b) => {
+    
+    console.log('[DEBUG] AllEntries - Dados de entrada:', entriesData.map(e => ({id: e.id, colaborador: e.colaborador})));
+    
+    // Garantir que o campo colaborador esteja corretamente processado antes da renderização
+    const processedEntries = entriesData.map(entry => {
+      // CORREÇÃO: Processar o campo colaborador para garantir que seja renderizado corretamente
+      let colaboradorValue = "";
+      
+      // Verificar se temos um valor válido
+      if (entry.colaborador !== undefined && 
+          entry.colaborador !== null && 
+          entry.colaborador !== "undefined" && 
+          entry.colaborador !== "null" &&
+          String(entry.colaborador).trim() !== "") {
+        colaboradorValue = String(entry.colaborador).trim();
+      }
+      
+      console.log(`[DEBUG] Processando entrada para renderização - ID: ${entry.id}, colaborador original: "${entry.colaborador}", colaborador final: "${colaboradorValue}"`);
+      
+      return {
+        ...entry,
+        colaborador: colaboradorValue
+      };
+    });
+    
+    console.log('[DEBUG] AllEntries - Entradas processadas:', processedEntries.map(e => ({id: e.id, colaborador: e.colaborador})));
+    
+    return processedEntries.sort((a, b) => {
       // Converter para objetos Date e comparar
       try {
         const dateA = parseEntryDate(a.entryTime);
@@ -212,8 +396,14 @@ export function EntranceHistory({ entries = [], limitEntries = false }: Entrance
       return matchesSearch && matchesApartmentInput && matchesDate;
     });
 
+    // Log para depuração dos valores de colaborador antes da renderização final
+    const result = limitEntries ? filtered.slice(0, 10) : filtered;
+    console.log('[DEBUG] Entradas filtradas prontas para renderização:', 
+      result.map(e => ({id: e.id, colaborador: e.colaborador}))
+    );
+    
     // Se limitEntries for true, retorna apenas as primeiras 10 entradas
-    return limitEntries ? filtered.slice(0, 10) : filtered;
+    return result;
   }, [allEntries, searchTerm, apartmentInputFilter, selectedDate, limitEntries, loading]);
 
   // Função para limpar os filtros
@@ -223,15 +413,37 @@ export function EntranceHistory({ entries = [], limitEntries = false }: Entrance
     setSelectedDate(undefined);
   };
 
+  // Adicionar um intervalo para atualizar os dados periodicamente (a cada 30 segundos)
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      refreshData();
+    }, 30000);
+    
+    return () => clearInterval(intervalId);
+  }, [refreshData]);
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Histórico de Entradas</CardTitle>
-        <CardDescription>
-          {limitEntries 
-            ? "Últimas 10 entradas registradas" 
-            : "Registro de todas as pessoas que entraram no prédio"}
-        </CardDescription>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>Histórico de Entradas</CardTitle>
+            <CardDescription>
+              {limitEntries 
+                ? "Últimas 10 entradas registradas" 
+                : "Registro de todas as pessoas que entraram no prédio"}
+            </CardDescription>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={refreshData}
+            className="gap-2"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            Recarregar Dados
+          </Button>
+        </div>
         
         <div className="space-y-4 mt-4">
           {/* Barra de busca */}
@@ -363,7 +575,32 @@ export function EntranceHistory({ entries = [], limitEntries = false }: Entrance
                       <TableCell>{entry.apartment}</TableCell>
                       <TableCell>{entry.entryTime}</TableCell>
                       <TableCell>{entry.authorizedBy || <span className="text-muted-foreground italic">Não informado</span>}</TableCell>
-                      <TableCell>{entry.colaborador ? entry.colaborador : <span className="text-muted-foreground italic">Nenhum</span>}</TableCell>
+                      <TableCell>
+                        {/* CORREÇÃO DIRETA: Acessar diretamente os dados para debug e exibição */}
+                        {(() => {
+                          // Log para debug do valor exato recebido para renderização
+                          console.log(`[DEBUG] Renderizando colaborador para ID ${entry.id}:`, {
+                            rawValue: entry.colaborador,
+                            type: typeof entry.colaborador
+                          });
+                          
+                          // Renderização condicional baseada no valor real
+                          if (entry.colaborador && entry.colaborador !== "" && 
+                              entry.colaborador !== "undefined" && entry.colaborador !== "null") {
+                            return (
+                              <span className="font-medium text-green-600" data-testid="colaborador-value">
+                                {entry.colaborador}
+                              </span>
+                            );
+                          } else {
+                            return (
+                              <span className="text-muted-foreground italic" data-testid="colaborador-empty">
+                                Nenhum
+                              </span>
+                            );
+                          }
+                        })()}
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (

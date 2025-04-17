@@ -238,7 +238,7 @@ export function BuildingRegistry({ onNewEntry }: BuildingRegistryProps) {
         <CardHeader>
           <CardTitle>Registrar Entrada</CardTitle>
           <CardDescription>
-            Verificar se o visitante já está cadastrado no sistema
+            Verifique se o visitante já está cadastrado no sistema
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -24,6 +24,7 @@ interface EntryRecord {
   entryTime: string;
   photo?: string;
   authorizedBy?: string;
+  colaborador?: string;
 }
 
 export default function DashboardPage() {
@@ -50,7 +51,7 @@ export default function DashboardPage() {
         if (data) {
           // Converter dados do Supabase
           const formattedEntries = data.map(log => {
-            const visitor = log.visitors;
+            const visitor = (log as any).visitors;
             let photoUrl;
 
             // Verificar se visitor existe e tem foto
@@ -69,15 +70,28 @@ export default function DashboardPage() {
               }
             }
 
+            // Extrair valor de colaborador para exibição
+            let colaboradorValue = "";
+            if (log.colaborador !== undefined && log.colaborador !== null) {
+              const trimmed = String(log.colaborador).trim();
+              if (trimmed && trimmed !== "null" && trimmed !== "undefined") {
+                colaboradorValue = trimmed;
+              }
+            }
+
             return {
               id: log.id,
               name: visitor?.name || 'Desconhecido',
               cpf: visitor?.cpf || 'Não informado',
-              apartment: log.going_to_ap || log.apartment || 'Não informado',
-              entryTime: log.entry_time ? new Date(log.entry_time).toLocaleString() : 
-                        (log.lastAccess ? new Date(log.lastAccess).toLocaleString() : new Date().toLocaleString()),
+              apartment: log.going_to_ap || 'Não informado',
+              entryTime: log.lastAccess
+                ? new Date(log.lastAccess).toLocaleString()
+                : log.createdAt
+                ? new Date(log.createdAt).toLocaleString()
+                : new Date().toLocaleString(),
               photo: photoUrl,
-              authorizedBy: log.auth_by || log.authBy || 'Não informado'
+              authorizedBy: log.authBy || 'Não informado',
+              colaborador: colaboradorValue
             };
           });
           
@@ -165,14 +179,13 @@ export default function DashboardPage() {
       <Tabs defaultValue="logs" className="space-y-4">
         <TabsList>
           <TabsTrigger value="logs">Logs de Entrada</TabsTrigger>
-          <TabsTrigger value="bans">Banimentos</TabsTrigger>
-          <TabsTrigger value="analytics">Análises</TabsTrigger>
+          <TabsTrigger value="bans">Bloqueios</TabsTrigger>
         </TabsList>
         
         <TabsContent value="logs" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Histórico de Entradas</CardTitle>
+              <CardTitle>Histórico Completo de Entradas</CardTitle>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -208,19 +221,6 @@ export default function DashboardPage() {
                   Visitantes banidos não poderão ter acesso ao condomínio.
                 </p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="analytics">
-          <Card>
-            <CardHeader>
-              <CardTitle>Análises e Relatórios</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Em breve: Gráficos e análises detalhadas dos dados de acesso.
-              </p>
             </CardContent>
           </Card>
         </TabsContent>

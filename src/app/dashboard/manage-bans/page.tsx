@@ -267,7 +267,7 @@ export default function ManageBansPage() {
             <CardTitle>Lista de Visitantes</CardTitle>
             <Button onClick={handleOpenBanByCpfDialog}>
               <Ban className="h-4 w-4 mr-2" />
-              Banir por CPF
+              Bloquear por CPF/RG 
             </Button>
           </div>
         </CardHeader>
@@ -295,7 +295,7 @@ export default function ManageBansPage() {
                   <TableHead>Nome</TableHead>
                   <TableHead>CPF</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Motivo do Banimento</TableHead>
+                  <TableHead>Motivo do Bloqueio</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
