@@ -226,7 +226,7 @@ export default function ManageBansPage() {
         );
         
         toast({
-          title: "Banimento removido",
+          title: "Bloqueio removido",
           description: `${selectedVisitor.name} não está mais banido.`
         });
       }
@@ -237,7 +237,7 @@ export default function ManageBansPage() {
       setCpfToBan("");
       setBanReason("");
     } catch (error) {
-      console.error("Erro ao processar banimento:", error);
+      console.error("Erro ao processar bloqueio:", error);
       toast({
         title: "Erro",
         description: "Ocorreu um erro ao processar a solicitação.",
@@ -324,7 +324,7 @@ export default function ManageBansPage() {
                           onClick={() => handleUnbanVisitor(visitor)}
                         >
                           <UserCheck className="h-4 w-4 mr-2" />
-                          Desbanir
+                          Desbloquaer
                         </Button>
                       ) : (
                         <Button
@@ -333,7 +333,7 @@ export default function ManageBansPage() {
                           onClick={() => handleBanVisitor(visitor)}
                         >
                           <Ban className="h-4 w-4 mr-2" />
-                          Banir
+                          Bloquear
                         </Button>
                       )}
                     </TableCell>
